@@ -49,18 +49,20 @@ function wpGoogleListGenerateHTML($key)
 
         $classes = array_merge($classes, $awards);
         $classes[] = wpGoogleListToClass($type);
-        $products[] = '<li class="' . trim(implode(' ', $classes)) . '">' . $flavor . '</li>';
+        $products[] = '        <li class="' . trim(implode(' ', $classes)) . '">' . $flavor . '</li>';
     }
 
 // print_r($allAwards);
     $productHTML = implode("\n", $products);
+
+    ksort($allAwards);
 
     $awardHTML = "";
     foreach ($allAwards as $class => $name) {
         if (!$class) {
             continue;
         }
-        $awardHTML .= "<label><input type=\"checkbox\" name=\"$class\" value=\"$class\">$name</label><br>\n";
+        $awardHTML .= "        <label><input type=\"checkbox\" name=\"$class\" value=\"$class\">$name</label><br>\n";
 
     }
 
