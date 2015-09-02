@@ -49,11 +49,11 @@ function wpGoogleListGenerateHTML($key)
 
         $classes = array_merge($classes, $awards);
         $classes[] = wpGoogleListToClass($type);
-        $products[] = '        <li class="' . trim(implode(' ', $classes)) . '">' . $flavor . '</li>';
+        $products[] = '<li class="' . trim(implode(' ', $classes)) . '">' . $flavor . '</li>';
     }
 
 // print_r($allAwards);
-    $productHTML = implode("\n", $products);
+    $productHTML = implode("\n            ", $products);
 
     ksort($allAwards);
 
@@ -74,7 +74,7 @@ function wpGoogleListGenerateHTML($key)
         <label><input type="checkbox" name="Gelato" value="Gelato">Gelato</label><br>
         <label><input type="checkbox" name="Yoghurt" value="Yoghurt">Yoghurt</label><br>
         <strong>Awards</strong><br>
-        <?= $awardHTML ?>
+<?= $awardHTML ?>
         <strong>Dietary</strong><br>
         <label><input type="checkbox" name="Vegan" value="Vegan">Vegan</label><br>
         <label><input type="checkbox" name="Dairy-Free" value="Dairy-Free">Dairy Free</label><br>
@@ -85,6 +85,7 @@ function wpGoogleListGenerateHTML($key)
     <div class="product-finder-right">
         <ul>
             <?= $productHTML ?>
+
         </ul>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
