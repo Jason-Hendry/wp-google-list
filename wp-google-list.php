@@ -27,110 +27,108 @@ function wpGoogleListGenerateHTML($key)
 
     $first = true;
 
-    $allAwards = [];
     $products = [];
 
+    $filterValues = [];
+    $filterCategories = [];
+    $numHeaders = 0;
+
     while (!feof($fp)) {
-        list($flavor, $type, $award, $dietaryTags) = fgetcsv($fp);
+        $row = fgetcsv($fp);
         if ($first) {
+            $filterCategories = $row;
+            $filterValues = array_fill_keys(array_keys($filterCategories), []);
+            $numHeaders = count($filterCategories);
             $first = false;
             continue;
         }
-        $classes = explode(",", $dietaryTags);
-        array_walk($classes, 'wpGoogleListToClass');
+        $itemName = $row[0];
 
-        $awards = explode(",", $award);
-        $awardLabels = explode(",", $award);
-        array_walk($awards, 'wpGoogleListToClass');
-
-        foreach ($awards as $i => $v) {
-            $allAwards[$v] = $awardLabels[$i];
+        $classes = [];
+        for ($i = 1; $i < $numHeaders; $i++) {
+            $values = explode(",", $row[$i]);
+            $labels = $values;
+            array_walk($values, 'wpGoogleListToClass');
+            $classes = array_merge($classes, $values);
+            foreach ($values as $j => $v) {
+                $filterValues[$i][$v] = $labels[$j];
+            }
         }
 
-        $classes = array_merge($classes, $awards);
-        $classes[] = wpGoogleListToClass($type);
-        $products[] = '<li class="' . trim(implode(' ', $classes)) . '">' . $flavor . '</li>';
+        $products[] = '<li class="' . trim(implode(' ', $classes)) . '">' . $itemName . '</li>';
     }
 
-// print_r($allAwards);
-    $productHTML = implode("\n            ", $products);
+    $productHTML = implode("\n        ", $products);
 
-    ksort($allAwards);
+    $filterHTML = "";
+    foreach($filterCategories as $i => $categoryName) {
+        if($i == 0) { continue; } // Skip Item Label
+        $filterHTML .= "    <strong>{$categoryName}</strong><br>\n";
 
-    $awardHTML = "";
-    foreach ($allAwards as $class => $name) {
-        if (!$class) {
-            continue;
+        $categoryHTML = "";
+        ksort($filterValues[$i]);
+        foreach ($filterValues[$i] as $class => $label) {
+            if (!$class) {
+                continue;
+            }
+            $categoryHTML .= "    <label><input type=\"checkbox\" name=\"$class\" value=\"$class\">$label</label><br>\n";
         }
-        $awardHTML .= "        <label><input type=\"checkbox\" name=\"$class\" value=\"$class\">$name</label><br>\n";
-
+        $filterHTML .= $categoryHTML;
     }
 
     ob_start();
     ?>
-    <div class="product-finder-left">
-        <strong>Type</strong><br>
-        <label><input type="checkbox" name="Sorbet" value="Sorbet">Sorbet</label><br>
-        <label><input type="checkbox" name="Gelato" value="Gelato">Gelato</label><br>
-        <label><input type="checkbox" name="Yoghurt" value="Yoghurt">Yoghurt</label><br>
-        <strong>Dietary</strong><br>
-        <label><input type="checkbox" name="Vegan" value="Vegan">Vegan</label><br>
-        <label><input type="checkbox" name="Dairy-Free" value="Dairy-Free">Dairy Free</label><br>
-        <label><input type="checkbox" name="Gluten-Free" value="Gluten-Free">Gluten Free</label><br>
-        <label><input type="checkbox" name="Fat-Free" value="Fat-Free">Fat Free</label><br>
-        <label><input type="checkbox" name="Contains-Egg" value="Contains-Egg">Contains Egg</label><br>
-        <strong>Awards</strong><br>
-        <?= $awardHTML ?>
-    </div>
-    <div class="product-finder-right">
-        <ul>
-            <?= $productHTML ?>
+<div class="product-finder-left">
+<?= $filterHTML ?>
+</div>
+<div class="product-finder-right">
+    <ul>
+        <?= $productHTML ?>
+    </ul>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 
-        </ul>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script type="application/javascript">
+    function counts() {
+        $('.product-finder-left input').each(function () {
 
-    <script type="application/javascript">
-        function counts() {
-            $('.product-finder-left input').each(function () {
+            var $count = $(this).siblings('.count');
+            if (!$count.length) {
+                $count = $('<span>').addClass('count');
+                $(this).closest('label').append($count);
+            }
+            var flavours = $('.product-finder-right li:visible').filter('.' + $(this).attr('value')).length
+            $count.text(' (' + flavours + ')');
+            if (flavours == 0) {
+                $(this).closest('label').addClass('disabled');
+                $(this).attr("disabled", true);
+            } else {
+                $(this).removeAttr("disabled");
+                $(this).closest('label').removeClass('disabled');
+            }
+        });
+    }
 
-                var $count = $(this).siblings('.count');
-                if (!$count.length) {
-                    $count = $('<span>').addClass('count');
-                    $(this).closest('label').append($count);
-                }
-                var flavours = $('.product-finder-right li:visible').filter('.' + $(this).attr('value')).length
-                $count.text(' (' + flavours + ')');
-                if (flavours == 0) {
-                    $(this).closest('label').addClass('disabled');
-                    $(this).attr("disabled", true);
-                } else {
-                    $(this).removeAttr("disabled");
-                    $(this).closest('label').removeClass('disabled');
-                }
+    $(document).ready(function () {
+        counts();
+        $('.product-finder-left input').click(function () {
+            var list = [];
+            $('.product-finder-left input:checked').each(function () {
+                list.push('.' + $(this).val());
             });
-        }
-
-        $(document).ready(function () {
+            $('.product-finder-right li').hide();
+            if (list.length == 0) {
+                $('.product-finder-right li').show();
+            } else {
+                var filter = list.join('');
+                $('.product-finder-right li').filter(filter).show();
+            }
             counts();
-            $('.product-finder-left input').click(function () {
-                var list = [];
-                $('.product-finder-left input:checked').each(function () {
-                    list.push('.' + $(this).val());
-                });
-                $('.product-finder-right li').hide();
-                if (list.length == 0) {
-                    $('.product-finder-right li').show();
-                } else {
-                    var filter = list.join('');
-                    $('.product-finder-right li').filter(filter).show();
-                }
-                counts();
-            })
         })
-    </script>
+    })
+</script>
     <?php
-    return "<!-- Generate by WP-Google-List Plugin -->" . ob_get_clean();
+    return "<!-- Generate by WP-Google-List Plugin -->\n" . ob_get_clean();
 }
 
 
@@ -185,7 +183,7 @@ function wpGoogleListAjaxDelete()
         $table_name,
         [
             'id' => $_POST['id']
-        ], array( '%d' )
+        ], array('%d')
     );
     echo "Deleted";
     wp_die(); // this is required to terminate immediately and return a proper response
@@ -200,7 +198,7 @@ function wpGoogleListGenerateAdminPage()
     global $wpdb; // this is how you get access to the database
     $table_name = $wpdb->prefix . "googlelist";
 
-    $rows = $wpdb->get_results( "SELECT * FROM `$table_name`", ARRAY_A );
+    $rows = $wpdb->get_results("SELECT * FROM `$table_name`", ARRAY_A);
 
     ?>
     change4
@@ -211,16 +209,17 @@ function wpGoogleListGenerateAdminPage()
             <th>Code</th>
             <th>Action</th>
         </tr>
-        <?php foreach($rows as $r) { ?>
-        <tr>
-            <td><?= $r['name'] ?></td>
-            <td><?= $r['key'] ?></td>
-            <td>[google_list name="<?= $r['name'] ?>"]</td>
-            <td>
-                <input type="button" class="wp-google-list-reload" data-text="<?= $r['id'] ?>|<?= $r['key'] ?>" value="Reload">
-                <input type="button" class="wp-google-list-delete" data-text="<?= $r['id'] ?>" value="Delete">
-            </td>
-        </tr>
+        <?php foreach ($rows as $r) { ?>
+            <tr>
+                <td><?= $r['name'] ?></td>
+                <td><?= $r['key'] ?></td>
+                <td>[google_list name="<?= $r['name'] ?>"]</td>
+                <td>
+                    <input type="button" class="wp-google-list-reload" data-text="<?= $r['id'] ?>|<?= $r['key'] ?>"
+                           value="Reload">
+                    <input type="button" class="wp-google-list-delete" data-text="<?= $r['id'] ?>" value="Delete">
+                </td>
+            </tr>
         <?php } ?>
     </table>
     <h2>Add New</h2>
@@ -266,7 +265,7 @@ function wpGoogleListGenerateAdminPage()
             });
 
             $('.wp-google-list-delete').click(function (e) {
-                if(!confirm("Are you sure you want to delete this?")) {
+                if (!confirm("Are you sure you want to delete this?")) {
                     return;
                 }
                 var data = {
@@ -297,7 +296,8 @@ function wpGoogleListGenerateAdminMenu()
 global $wpGoogleList_db_version;
 $wpGoogleList_db_version = '1.1';
 
-function wpGoogleListInstallNotice() {
+function wpGoogleListInstallNotice()
+{
     global $wpGoogleList_db_version;
     ?>
     <div class="updated">
@@ -306,24 +306,26 @@ function wpGoogleListInstallNotice() {
     <?php
 }
 
-function wpGoogleListUpgradeNotice() {
+function wpGoogleListUpgradeNotice()
+{
     global $wpdb, $wpGoogleList_db_version;
     ?>
     <div class="updated">
-        <p>"<?= $wpdb->prefix ?>" Upgraded to version: <?= get_site_option('wpGoogleList_db_version') ?> > <?= $wpGoogleList_db_version ?></p>
+        <p>"<?= $wpdb->prefix ?>" Upgraded to version: <?= get_site_option('wpGoogleList_db_version') ?>
+            > <?= $wpGoogleList_db_version ?></p>
     </div>
     <?php
 }
 
 /**
-CREATE TABLE wp_googlelist (
-id mediumint(9) NOT NULL AUTO_INCREMENT,
-created datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
-`name` tinytext NOT NULL,
-`key` tinytext NOT NULL,
-text text NOT NULL,
-PRIMARY KEY id (id)
-)
+ * CREATE TABLE wp_googlelist (
+ * id mediumint(9) NOT NULL AUTO_INCREMENT,
+ * created datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+ * `name` tinytext NOT NULL,
+ * `key` tinytext NOT NULL,
+ * text text NOT NULL,
+ * PRIMARY KEY id (id)
+ * )
  */
 
 
@@ -349,18 +351,17 @@ function wpGoogleListInstall()
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 
-    add_action( 'admin_notices', 'wpGoogleListUpgradeNotice' );
+    add_action('admin_notices', 'wpGoogleListUpgradeNotice');
     update_option("wpGoogleList_db_version", $wpGoogleList_db_version);
 
 }
-
 
 
 function wpGoogleListDBcheck()
 {
     global $wpGoogleList_db_version;
     if (get_site_option('wpGoogleList_db_version') != $wpGoogleList_db_version) {
-        add_action( 'admin_notices', 'wpGoogleListInstallNotice' );
+        add_action('admin_notices', 'wpGoogleListInstallNotice');
         wpGoogleListInstall();
     }
 }
@@ -369,13 +370,15 @@ register_activation_hook(__FILE__, 'wpGoogleListInstall');
 add_action('plugins_loaded', 'wpGoogleListDBcheck');
 
 
-function wpGoogleListShortTag( $atts ) {
-    $a = shortcode_atts( array(
+function wpGoogleListShortTag($atts)
+{
+    $a = shortcode_atts(array(
         'name' => '',
-    ), $atts );
+    ), $atts);
     global $wpdb; // this is how you get access to the database
     $table_name = $wpdb->prefix . "googlelist";
-    $rows = $wpdb->get_results($wpdb->prepare(  "SELECT * FROM `$table_name` WHERE `name` = %s limit 1",$a['name']), ARRAY_A );
+    $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM `$table_name` WHERE `name` = %s limit 1", $a['name']), ARRAY_A);
     return $rows[0]['text'];
 }
-add_shortcode( 'google_list', 'wpGoogleListShortTag' );
+
+add_shortcode('google_list', 'wpGoogleListShortTag');
