@@ -167,9 +167,9 @@ function wpGoogleListAjaxReload()
             'created' => current_time('mysql'),
             'key' => $key,
             'text' => $text,
-        ), [
+        ), array(
             'id' => $_POST['id']
-        ]
+        )
     );
     echo $text;
     wp_die(); // this is required to terminate immediately and return a proper response
@@ -181,9 +181,9 @@ function wpGoogleListAjaxDelete()
     $table_name = $wpdb->prefix . "googlelist";
     $wpdb->delete(
         $table_name,
-        [
+        array(
             'id' => $_POST['id']
-        ], array('%d')
+        ), array('%d')
     );
     echo "Deleted";
     wp_die(); // this is required to terminate immediately and return a proper response
