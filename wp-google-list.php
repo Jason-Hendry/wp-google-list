@@ -44,7 +44,7 @@ function wpGoogleListGenerateHTML($key)
         }
         $itemName = $row[0];
 
-        $classes = [];
+        $classes = array();
         for ($i = 1; $i < $numHeaders; $i++) {
             $values = explode(",", $row[$i]);
             $labels = $values;
