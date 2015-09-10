@@ -27,10 +27,10 @@ function wpGoogleListGenerateHTML($key)
 
     $first = true;
 
-    $products = [];
+    $products = array();
 
-    $filterValues = [];
-    $filterCategories = [];
+    $filterValues = array();
+    $filterCategories = array();
     $numHeaders = 0;
 
     while (!feof($fp)) {
