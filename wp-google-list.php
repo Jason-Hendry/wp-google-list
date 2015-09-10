@@ -37,7 +37,7 @@ function wpGoogleListGenerateHTML($key)
         $row = fgetcsv($fp);
         if ($first) {
             $filterCategories = $row;
-            $filterValues = array_fill_keys(array_keys($filterCategories), []);
+            $filterValues = array_fill_keys(array_keys($filterCategories), array());
             $numHeaders = count($filterCategories);
             $first = false;
             continue;
