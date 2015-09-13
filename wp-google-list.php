@@ -372,10 +372,11 @@ add_action('plugins_loaded', 'wpGoogleListDBcheck');
 
 function wpGoogleListShortTag($atts)
 {
+    global $wpdb; // this is how you get access to the database
+
     $a = shortcode_atts(array(
         'name' => '',
     ), $atts);
-    global $wpdb; // this is how you get access to the database
     $table_name = $wpdb->prefix . "googlelist";
     $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM `$table_name` WHERE `name` = %s limit 1", $a['name']), ARRAY_A);
     return $rows[0]['text'];
